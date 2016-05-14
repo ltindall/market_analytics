@@ -24,8 +24,8 @@
 		String action = request.getParameter("submit");
 		if (action.equals("cart")) {
 			int product_id = Integer.parseInt(request.getParameter("id"));
-			int user_id = (Integer) session.getAttribute("user_id");
-			Float price = Float.parseFloat(request.getParameter("price"));
+			int user_id = ((Integer) session.getAttribute("user_id")).intValue();
+			float price = Float.parseFloat(request.getParameter("price"));
 			int quantity = Integer.parseInt(request.getParameter("quantity"));
 		    if (quantity > 0) {
 		    	Statement stmt = conn.createStatement();
