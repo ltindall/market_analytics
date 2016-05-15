@@ -35,7 +35,7 @@
 			int id = Integer.parseInt(request.getParameter("id"));
 			String name = request.getParameter("name");
 			String sku = request.getParameter("sku");
-			Float price = Float.parseFloat(request.getParameter("price"));
+			float price = Float.parseFloat(request.getParameter("price"));
 			Statement stmt = conn.createStatement();
 			String sql = "UPDATE products SET name = '" + name +
 					"', sku = '" + sku + "', price = " + price + " where id = " + id;
@@ -47,7 +47,7 @@
 			String name = request.getParameter("name");
 			String category_name = request.getParameter("category_name");
 			String sku = request.getParameter("sku");
-			Float price = Float.parseFloat(request.getParameter("price"));
+			float price = Float.parseFloat(request.getParameter("price"));
 			Statement stmt1 = conn.createStatement();
 			ResultSet rs1 = stmt1.executeQuery("SELECT id from categories where name = '" + category_name + "'");
 			if (rs1.next()) {

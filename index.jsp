@@ -24,7 +24,7 @@
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE name='" + user_name+ "'");
 		if (rs.next()) {
-			session.setAttribute("user_id", rs.getInt(1));
+			session.setAttribute("user_id", Integer.toString(rs.getInt(1)));
 	    session.setAttribute("user_name", rs.getString(2));
 	    session.setAttribute("user_role", rs.getString(3));
 		}
