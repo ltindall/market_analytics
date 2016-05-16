@@ -31,7 +31,9 @@
 				 "products prod2 ON top.p2=prod2.id "+
 				 "ORDER BY result DESC LIMIT 100;";
 		stmt = conn.createStatement();
+		long startTime = System.currentTimeMillis();
 		rs = stmt.executeQuery(uberQuery);
+		long endTime = System.currentTimeMillis();
 %>
 <body>
 <h1>Similar Products</h1>
@@ -42,6 +44,7 @@ Hello <%=session.getAttribute("user_name")%>
 <% 
 		int count = 0;
 		DecimalFormat df = new DecimalFormat("#.000000");
+		out.print("<br>Query time: " + ((double)(endTime - startTime))/1000 + " seconds<br>");
 		while(rs.next()){
 		out.print("<tr><td>"+ ++count+"</td><td>"+df.format(rs.getDouble("result"))+"</td><td>" 
 			  	  +rs.getString("prodA")+"</td><td>"+rs.getString("prodB")+"</td></tr>");
