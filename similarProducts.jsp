@@ -8,6 +8,8 @@
 <title>Similar Products</title>
 </head>
 <%Connection conn = null;
+  ResultSet rs = null;
+  Statement stmt = null;
 	try {
 		Class.forName("org.postgresql.Driver");
 		String url = "jdbc:postgresql://159.203.253.157/marketPA2";
@@ -15,7 +17,6 @@
     	String password = "P3anutNJ3lly";
 		conn = DriverManager.getConnection(url, admin, password);
 		
-		Statement stmt = null;
 		String uberQuery = "SELECT (top.cosSim/(n1.norm*n2.norm)) AS result,prod1.name AS prodA,prod2.name AS prodB FROM "+
 				"(SELECT SUM(quantity*price) AS norm, product_id FROM orders GROUP BY product_id ORDER BY product_id) AS n1 "+
 				"JOIN (SELECT SUM(t1.spent * t2.spent) AS cosSim,t1.product_id AS p1,t2.product_id AS p2 FROM "+
@@ -30,7 +31,7 @@
 				 "products prod2 ON top.p2=prod2.id "+
 				 "ORDER BY result DESC LIMIT 100;";
 		stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery(uberQuery);	
+		rs = stmt.executeQuery(uberQuery);
 %>
 <body>
 <h1>Similar Products</h1>
@@ -47,7 +48,29 @@ Hello <%=session.getAttribute("user_name")%>
 		}
 
 	}
-	catch (Exception e) {} 
+	catch (SQLException e) {
+		throw new RuntimeException(e);
+	}
+	finally{
+		if (rs != null) {
+	    	try {
+	        	rs.close();
+	        } catch (SQLException e) { } // Ignore
+	        rs = null;
+	    }
+		if (stmt != null) {
+	    	try {
+	        	stmt.close();
+	        } catch (SQLException e) { } // Ignore
+	        stmt = null;
+	    }
+	    if (conn != null) {
+	    	try {
+	        	conn.close();
+	        } catch (SQLException e) { } // Ignore
+	        conn = null;
+	    }
+	}
 %>
 </table>
 </body>
