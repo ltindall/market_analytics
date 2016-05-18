@@ -81,70 +81,37 @@
 	</ul>
 </div>
 <div class="container">
-<div class="row"> 
-    <form  class="form-inline" action="analytics.jsp" method="POST">
-        <div class="form-group">
-            <label for="row">Row</label>
-            <select class="form-control" id="row" name="row"> 
-                <option>Customers</option>
-                <option>States</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="row">Order</label>
-            <select class="form-control" id="order" name="order"> 
-                <option>Alphabetical</option>
-                <option>Top-K</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="row">Category</label>
-            <select class="form-control" id="category" name="category"> 
-                <% 
-                    while(categories.next()){
-                %>
-                    <option><%=categories.getString("name")%></option>
-                <%
-                    }
-                %>
-            </select>
-        </div>
-        <input class="btn btn-primary" type="submit" name="query" value="Run Query"/>
-    </form>
-</div>
-<table class="table table-striped">
-	<th>Product Name</th>
-	<th>Category Name</th>
-	<th>SKU</th>
-	<th>Price</th>
-	<th>Update</th>
-	<th>Delete</th>
-	<tr>
-	<form action="products.jsp" method="POST">
-		<td><input name="name"/></td>
-		<td><input name="category_name"/></td>
-		<td><input name="sku" size="30"/></td>
-		<td><input name="price" size="30"/></td>
-		<td><input class="btn btn-primary" type="submit" name="submit" value="insert"/></td>
-	</form>
-	</tr>
-<% while (rs.next()) { %>
-	<tr>
-	<form action="products.jsp" method="POST">
-		<td><input value="<%=rs.getString("name")%>" name="name" size="15"/>
-		<td><%=rs.getString("category_name")%></td>
-		<td><input value="<%=rs.getString("sku")%>" name="sku" size="30"/></td>
-		<td><input value="<%=rs.getFloat("price")%>" name="price" size="30"/></td>
-		<input type="hidden" value="<%=rs.getInt("id")%>" name="id"/>
-		<td><input class="btn btn-success" type="submit" name="submit" value="update"/></td>
-	</form>
-	<form action="products.jsp" method="POST">
-    	<input type="hidden" value="<%=rs.getInt("id")%>" name="id"/>
-    	<td><input class="btn btn-danger" type="submit" name="submit" value="delete"/></td>
-    </form>
-	</tr>
-<% } %>
-</table>
+    <div class="row"> 
+        <form  class="form-inline" action="analytics.jsp" method="POST">
+            <div class="form-group">
+                <label for="row">Row</label>
+                <select class="form-control" id="row" name="row"> 
+                    <option>Customers</option>
+                    <option>States</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="row">Order</label>
+                <select class="form-control" id="order" name="order"> 
+                    <option>Alphabetical</option>
+                    <option>Top-K</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="row">Category</label>
+                <select class="form-control" id="category" name="category"> 
+                    <% 
+                        while(categories.next()){
+                    %>
+                        <option><%=categories.getString("name")%></option>
+                    <%
+                        }
+                    %>
+                </select>
+            </div>
+            <input class="btn btn-primary" type="submit" name="query" value="Run Query"/>
+        </form>
+    </div>
 </div>
 </body>
 </html>
