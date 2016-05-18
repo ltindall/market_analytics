@@ -20,55 +20,29 @@
                 conn = DriverManager.getConnection(url, admin, password);
 	}
 	catch (Exception e) {}
-	
+
+        int category = 0; 	
 	if ("POST".equalsIgnoreCase(request.getMethod())) {
-		String action = request.getParameter("submit");
-		if (action.equals("delete")) {
-			int id = Integer.parseInt(request.getParameter("id"));
-			Statement stmt = conn.createStatement();
-			String sql = "UPDATE products SET is_delete = true where id = " + id;
-			try {
-				stmt.executeUpdate(sql);
-			}
-			catch(Exception e) {out.println("<script>alert('can not delete!');</script>");}
-		}
-		else if (action.equals("update")) {
-			int id = Integer.parseInt(request.getParameter("id"));
-			String name = request.getParameter("name");
-			String sku = request.getParameter("sku");
-			float price = Float.parseFloat(request.getParameter("price"));
-			Statement stmt = conn.createStatement();
-			String sql = "UPDATE products SET name = '" + name +
-					"', sku = '" + sku + "', price = " + price + " where id = " + id;
-			int result = stmt.executeUpdate(sql);
-			if (result == 1) out.println("<script>alert('update product sucess!');</script>");
-		    else out.println("<script>alert('update product fail!');</script>");
-		}
-		else if (action.equals("insert")) {
-			String name = request.getParameter("name");
-			String category_name = request.getParameter("category_name");
-			String sku = request.getParameter("sku");
-			float price = Float.parseFloat(request.getParameter("price"));
-			Statement stmt1 = conn.createStatement();
-			ResultSet rs1 = stmt1.executeQuery("SELECT id from categories where name = '" + category_name + "'");
-			if (rs1.next()) {
-				int category_id = rs1.getInt(1);
-				Statement stmt2 = conn.createStatement();
-				String sql = "INSERT into products(name, category_id, sku, price, is_delete) values('" + name +
-						"', '" + category_id + "', '" + sku + "', '" + price + "', false)";
-				int result = stmt2.executeUpdate(sql);
-				if (result == 1) out.println("<script>alert('insert into product sucess!');</script>");
-			    else out.println("<script>alert('insert into product fail!');</script>");
-			}
-			else {out.println("<script>alert('category does not exist!');</script>");}
-		}
+		//String action = request.getParameter("submit");
+
+            // row option for query     
+            String rowOption = request.getParameter("row"); 
+
+            // order option for query 
+            String orderOption = request.getParameter("order");
+
+            // category id for query, if all categories then it equals 0 
+            category = Integer.parseInt(request.getParameter("category")); 
+            
+
+
 	}
 	
 	Statement stmt = conn.createStatement();
 	ResultSet rs = stmt.executeQuery("SELECT p.id, p.name, p.sku, p.price, c.name as category_name" + 
 		" FROM products p, categories c where is_delete = false and c.id = p.category_id");
         Statement catStmt = conn.createStatement(); 
-        ResultSet categories = catStmt.executeQuery("SELECT c.name FROM categories c");  
+        ResultSet categories = catStmt.executeQuery("SELECT c.id,c.name FROM categories c");  
 %>
 <body>
 <div class="collapse navbar-collapse">
@@ -91,7 +65,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="row">Order</label>
+                <label for="order">Order</label>
                 <select class="form-control" id="order" name="order"> 
                     <option>Alphabetical</option>
                     <option>Top-K</option>
@@ -100,11 +74,19 @@
             <div class="form-group">
                 <label for="row">Category</label>
                 <select class="form-control" id="category" name="category"> 
+                    <option value="0"> All Categories </option>
                     <% 
                         while(categories.next()){
+                            if(categories.getInt("id") == category){
                     %>
-                        <option><%=categories.getString("name")%></option>
+                            <option value="<%=categories.getInt("id")%>" selected><%=categories.getString("name")%></option>
                     <%
+                            }
+                            else{
+                    %>
+                            <option value="<%=categories.getInt("id")%>"><%=categories.getString("name")%></option>
+                    <%
+                            }
                         }
                     %>
                 </select>
