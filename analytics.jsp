@@ -43,6 +43,14 @@
           	// ResultSet rs = stmt.executeQuery("SELECT p.id, p.name, p.sku, p.price, c.name as category_name" +
           	// 	" FROM products p, categories c where is_delete = false and c.id = p.category_id");
 
+          	//Query to get Top-K users and results, may need to do other queries for row/column headers otherwise merge giant tuple
+          	/*
+          	WITH topProducts AS (SELECT product_id FROM orders GROUP BY product_id ORDER BY SUM(price*quantity) DESC LIMIT 10), 
+          	topUsers AS (SELECT user_id,SUM(price*quantity) as sum FROM orders WHERE product_id IN (SELECT product_id FROM topProducts) GROUP BY user_id ORDER BY sum DESC LIMIT 20)
+			SELECT users.name AS customer,products.name AS product, SUM(orders.price*orders.quantity) FROM orders JOIN users ON user_id=users.id JOIN products ON product_id=products.id 
+			WHERE user_id IN (SELECT user_id FROM topUsers) AND product_id IN (SELECT product_id FROM topProducts) GROUP BY users.name, products.name ORDER BY users.name, products.name;
+          	*/
+          	
             //currently this query is not dynamic: it only does customers, alphabetical, all
             rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
             "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
