@@ -66,101 +66,134 @@
                 GROUP BY users.id,users.name,products.name, topSum, topProducts.topProductSum  
                 ORDER BY topSum DESC, topProducts.topProductSum DESC, users.name, products.name
           	*/
-          	
-            //currently this query is not dynamic: it only does customers, alphabetical, all
-            if(orderOption.equals("Alphabetical")){
-                String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                "FROM (SELECT * FROM ( " +
-                           "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                           "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                           "WHERE (o.is_cart = false OR o.is_cart IS NULL) "; 
-                if(category != 0){
-                    analyticsQuery += "AND category_id = "+category+" "; 
+            if(rowOption.equals("Customers")){	
+                if(orderOption.equals("Alphabetical")){
+                    String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
+                    "FROM (SELECT * FROM ( " +
+                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
+                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
+                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) "; 
+                    if(category != 0){
+                        analyticsQuery += "AND category_id = "+category+" "; 
+                    }
+                    analyticsQuery += "GROUP BY p3.id, p3.name " +
+                               "ORDER BY p3.name ASC " +
+                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                           "(SELECT * FROM ( " +
+                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
+                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
+                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
+                               "GROUP BY u3.id, u3.name " +
+                               "ORDER BY u3.name ASC " +
+                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
+                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
+                    "ORDER BY k.username ASC, k.prodname ASC "; 
+                    rs = stmt.executeQuery(analyticsQuery); 
+                    /*
+                    rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
+                    "FROM (SELECT * FROM ( " +
+                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
+                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
+                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
+                               "GROUP BY p3.id, p3.name " +
+                               "ORDER BY p3.name ASC " +
+                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                           "(SELECT * FROM ( " +
+                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
+                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
+                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
+                               "GROUP BY u3.id, u3.name " +
+                               "ORDER BY u3.name ASC " +
+                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
+                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
+                    "ORDER BY k.username ASC, k.prodname ASC " +
+                    "");
+                    */
                 }
-                analyticsQuery += "GROUP BY p3.id, p3.name " +
-                           "ORDER BY p3.name ASC " +
-                ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                       "(SELECT * FROM ( " +
-                           "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                           "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                           "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                           "GROUP BY u3.id, u3.name " +
-                           "ORDER BY u3.name ASC " +
-                ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                "ORDER BY k.username ASC, k.prodname ASC "; 
-                rs = stmt.executeQuery(analyticsQuery); 
-                /*
-                rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                "FROM (SELECT * FROM ( " +
-                           "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                           "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                           "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
-                           "GROUP BY p3.id, p3.name " +
-                           "ORDER BY p3.name ASC " +
-                ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                       "(SELECT * FROM ( " +
-                           "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                           "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                           "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                           "GROUP BY u3.id, u3.name " +
-                           "ORDER BY u3.name ASC " +
-                ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                "ORDER BY k.username ASC, k.prodname ASC " +
-                "");
-                */
+                else{
+                    String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
+                    "FROM (SELECT * FROM ( " +
+                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
+                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
+                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) "; 
+                    if(category != 0){
+                        analyticsQuery += "AND category_id = "+category+" "; 
+                    }
+                    analyticsQuery += "GROUP BY p3.id, p3.name " +
+                               "ORDER BY totalProd DESC " +
+                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                           "(SELECT * FROM ( " +
+                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
+                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
+                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
+                               "GROUP BY u3.id, u3.name " +
+                               "ORDER BY totalUser DESC " +
+                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
+                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
+                    "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC "; 
+                    rs = stmt.executeQuery(analyticsQuery); 
+                    /*
+                    rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
+                    "FROM (SELECT * FROM ( " +
+                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
+                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
+                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
+                               "GROUP BY p3.id, p3.name " +
+                               "ORDER BY totalProd DESC " +
+                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                           "(SELECT * FROM ( " +
+                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
+                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
+                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
+                               "GROUP BY u3.id, u3.name " +
+                               "ORDER BY totalUser DESC " +
+                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
+                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
+                    "ORDER BY k.totalUser DESC, k.totalprod DESC, k.username ASC, k.prodname ASC " +
+                    "");
+                    */
+                }
             }
-            else{
-                String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                "FROM (SELECT * FROM ( " +
-                           "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                           "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                           "WHERE (o.is_cart = false OR o.is_cart IS NULL) "; 
-                if(category != 0){
-                    analyticsQuery += "AND category_id = "+category+" "; 
+            else if(rowOption.equals("States")){
+
+                // this is not working 
+                if(orderOption.equals("Alphabetical")){
+                    String analyticsQuery = "SELECT  k.state, k.totalState, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod,  u.state AS state, u.totalstate " +
+                    "FROM (SELECT * FROM ( " +
+                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
+                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
+                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) "; 
+                    if(category != 0){
+                        analyticsQuery += "AND category_id = "+category+" "; 
+                    }
+                    analyticsQuery += "GROUP BY p3.id, p3.name " +
+                               "ORDER BY p3.name ASC " +
+                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                           "(SELECT * FROM ( " +
+                               "SELECT  u3.state, COALESCE(SUM(o.price * o.quantity),0) AS totalState " +
+                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
+                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
+                               "GROUP BY u3.state " +
+                               "ORDER BY u3.state ASC " +
+                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
+                    "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod " +
+                    "ORDER BY k.state ASC, k.prodname ASC "; 
+                    rs = stmt.executeQuery(analyticsQuery); 
                 }
-                analyticsQuery += "GROUP BY p3.id, p3.name " +
-                           "ORDER BY totalProd DESC " +
-                ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                       "(SELECT * FROM ( " +
-                           "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                           "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                           "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                           "GROUP BY u3.id, u3.name " +
-                           "ORDER BY totalUser DESC " +
-                ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC "; 
-                rs = stmt.executeQuery(analyticsQuery); 
-                /*
-                rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                "FROM (SELECT * FROM ( " +
-                           "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                           "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                           "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
-                           "GROUP BY p3.id, p3.name " +
-                           "ORDER BY totalProd DESC " +
-                ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                       "(SELECT * FROM ( " +
-                           "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                           "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                           "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                           "GROUP BY u3.id, u3.name " +
-                           "ORDER BY totalUser DESC " +
-                ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                "ORDER BY k.totalUser DESC, k.totalprod DESC, k.username ASC, k.prodname ASC " +
-                "");
-                */
+                else{
+                 // fill in stuff for states top-k
+                }
+
             }
 
 	}
