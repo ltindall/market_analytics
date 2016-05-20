@@ -49,6 +49,12 @@
           	topUsers AS (SELECT user_id,SUM(price*quantity) as sum FROM orders WHERE product_id IN (SELECT product_id FROM topProducts) GROUP BY user_id ORDER BY sum DESC LIMIT 20)
 			SELECT users.name AS customer,products.name AS product, SUM(orders.price*orders.quantity) FROM orders JOIN users ON user_id=users.id JOIN products ON product_id=products.id 
 			WHERE user_id IN (SELECT user_id FROM topUsers) AND product_id IN (SELECT product_id FROM topProducts) GROUP BY users.name, products.name ORDER BY users.name, products.name;
+
+
+                EDIT by Lucas(I think be incorrect to limit topUsers to people who have purchases in topProducts, as
+                a topUser does not have to have any purchases in topProducts. I think I modified the query to correct that
+                as welll as have the sum of purchases for that user.)
+                WITH topProducts AS (SELECT product_id FROM orders GROUP BY product_id ORDER BY SUM(price*quantity) DESC LIMIT 10), topUsers AS (SELECT user_id,SUM(price*quantity) as sum FROM orders GROUP BY user_id Order by sum DESC LIMIT 20)SELECT users.id as id,users.name AS customer,products.name AS product, topUsers.sum as topSum, SUM(orders.price*orders.quantity) FROM orders JOIN users ON user_id=users.id JOIN products ON product_id=products.id JOIN topUsers on orders.user_id = topUsers.user_id WHERE orders.user_id IN (SELECT user_id FROM topUsers) AND product_id IN (SELECT product_id FROM topProducts) GROUP BY users.id,users.name,products.name, topSum  ORDER BY topSum DESC,users.name, products.name ;
           	*/
           	
             //currently this query is not dynamic: it only does customers, alphabetical, all
