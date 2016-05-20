@@ -53,8 +53,18 @@
 
                 EDIT by Lucas(I think be incorrect to limit topUsers to people who have purchases in topProducts, as
                 a topUser does not have to have any purchases in topProducts. I think I modified the query to correct that
-                as welll as have the sum of purchases for that user.)
-                WITH topProducts AS (SELECT product_id FROM orders GROUP BY product_id ORDER BY SUM(price*quantity) DESC LIMIT 10), topUsers AS (SELECT user_id,SUM(price*quantity) as sum FROM orders GROUP BY user_id Order by sum DESC LIMIT 20)SELECT users.id as id,users.name AS customer,products.name AS product, topUsers.sum as topSum, SUM(orders.price*orders.quantity) FROM orders JOIN users ON user_id=users.id JOIN products ON product_id=products.id JOIN topUsers on orders.user_id = topUsers.user_id WHERE orders.user_id IN (SELECT user_id FROM topUsers) AND product_id IN (SELECT product_id FROM topProducts) GROUP BY users.id,users.name,products.name, topSum  ORDER BY topSum DESC,users.name, products.name ;
+                as well as have the sum of purchases for that user.)
+                2nd EDIT: Fixed the query, now the order is correct and results match up with my modification on Ryan's for top-K
+                Some things in the WHERE may be redundant
+                
+                WITH 
+                topProducts AS (SELECT product_id,SUM(price*quantity) as topProductSum FROM orders GROUP BY product_id ORDER BY SUM(price*quantity) DESC LIMIT 10), 
+                topUsers AS (SELECT user_id,SUM(price*quantity) as sum FROM orders GROUP BY user_id Order by sum DESC LIMIT 20)
+                SELECT users.id as id,users.name AS customer,products.name AS product, topUsers.sum as topSum, topProducts.topProductSum, SUM(orders.price*orders.quantity) 
+                FROM orders JOIN users ON user_id=users.id JOIN products ON product_id=products.id JOIN topUsers on orders.user_id = topUsers.user_id JOIN topProducts on topProducts.product_id = orders.product_id 
+                WHERE orders.user_id IN (SELECT user_id FROM topUsers) AND orders.product_id IN (SELECT product_id FROM topProducts) 
+                GROUP BY users.id,users.name,products.name, topSum, topProducts.topProductSum  
+                ORDER BY topSum DESC, topProducts.topProductSum DESC, users.name, products.name
           	*/
           	
             //currently this query is not dynamic: it only does customers, alphabetical, all
@@ -78,6 +88,29 @@
             "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
             "ORDER BY k.username ASC, k.prodname ASC " +
             "");
+
+            // I think the query should look like this for top-K
+            /*
+            SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent 
+FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser 
+              FROM (SELECT * FROM ( 
+                         SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd 
+                         FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id 
+                         WHERE (o.is_cart = false OR o.is_cart IS NULL) 
+                         GROUP BY p3.id, p3.name 
+                         ORDER BY totalProd DESC 
+              ) p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, 
+                     (SELECT * FROM ( 
+                         SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser 
+                         FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id 
+                         WHERE o.is_cart = false OR o.is_cart IS NULL 
+                         GROUP BY u3.id, u3.name 
+                         ORDER BY totalUser DESC
+              ) u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u 
+             ) k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id 
+              GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod 
+              ORDER BY k.totaluser DESC,k.totalprod DESC,k.username ASC, k.prodname ASC 
+            */
 
 	}
 
