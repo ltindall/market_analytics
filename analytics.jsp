@@ -22,7 +22,8 @@
 	catch (Exception e) {}
 
         int category = 0;
-
+        int userPageStart = 0; 
+        int prodPageStart = 0;
         ResultSet rs = null;
 	if ("POST".equalsIgnoreCase(request.getMethod())) {
 		//String action = request.getParameter("submit");
@@ -36,12 +37,11 @@
             // category id for query, if all categories then it equals 0
             category = Integer.parseInt(request.getParameter("category"));
 
-            int userPageStart = 0;
+           
             if(request.getParameter("userPageStart") != null && !request.getParameter("userPageStart").isEmpty()) {
               userPageStart = Integer.parseInt(request.getParameter("userPageStart"));
             }
 
-            int prodPageStart = 0;
             if(request.getParameter("prodPageStart") != null && !request.getParameter("prodPageStart").isEmpty()) {
               prodPageStart = Integer.parseInt(request.getParameter("prodPageStart"));
             }
@@ -76,6 +76,22 @@
                 GROUP BY users.id,users.name,products.name, topSum, topProducts.topProductSum
                 ORDER BY topSum DESC, topProducts.topProductSum DESC, users.name, products.name
           	*/
+            
+            
+            
+            // I think some of the following would be useful indices 
+            // If I have time I'll start testing 
+            // Indices can be added/removed by running the following sql 
+            //CREATE INDEX students_first_name ON students(first_name)
+            //DROP INDEX students_first_name
+            //orders.is_cart
+            //products.category_id
+            //products.name
+            //users.name
+            //users.state
+            //orders.user_id
+            //orders.product_id
+             
             if(rowOption.equals("Customers")){
                 if(orderOption.equals("Alphabetical")){
                     String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
@@ -101,28 +117,6 @@
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.username ASC, k.prodname ASC ";
                     rs = stmt.executeQuery(analyticsQuery);
-                    /*
-                    rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                    "FROM (SELECT * FROM ( " +
-                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
-                               "GROUP BY p3.id, p3.name " +
-                               "ORDER BY p3.name ASC " +
-                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                           "(SELECT * FROM ( " +
-                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                               "GROUP BY u3.id, u3.name " +
-                               "ORDER BY u3.name ASC " +
-                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                    "ORDER BY k.username ASC, k.prodname ASC " +
-                    "");
-                    */
                 }
                 else{
                     String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
@@ -148,33 +142,9 @@
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC ";
                     rs = stmt.executeQuery(analyticsQuery);
-                    /*
-                    rs = stmt.executeQuery("SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
-                    "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
-                    "FROM (SELECT * FROM ( " +
-                               "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
-                               "FROM Products p3 LEFT JOIN Orders o ON p3.id = o.product_id " +
-                               "WHERE (o.is_cart = false OR o.is_cart IS NULL) " + //AND category_id = 2
-                               "GROUP BY p3.id, p3.name " +
-                               "ORDER BY totalProd DESC " +
-                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
-                           "(SELECT * FROM ( " +
-                               "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
-                               "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
-                               "WHERE o.is_cart = false OR o.is_cart IS NULL " +
-                               "GROUP BY u3.id, u3.name " +
-                               "ORDER BY totalUser DESC " +
-                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
-                    ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
-                    "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
-                    "ORDER BY k.totalUser DESC, k.totalprod DESC, k.username ASC, k.prodname ASC " +
-                    "");
-                    */
                 }
             }
             else if(rowOption.equals("States")){
-
-                // this is not working
                 if(orderOption.equals("Alphabetical")){
                     String analyticsQuery = "SELECT k.stateid AS userid, k.state AS username, k.totalState AS totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
                     "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS stateid, u.state AS state, u.totalstate " +
@@ -310,9 +280,10 @@
             <input type="number" name="prodPageStart" id="prodPageStart" style="display: none" value="0">
             <% } %>
             <input class="btn btn-primary" type="submit" name="query" value="Run Query"/>
+            
         </form>
     </div>
-  </div>
+</div> 
   <% if ("POST".equalsIgnoreCase(request.getMethod())) { %>
   <div>
     <table class="table table-striped">
@@ -361,6 +332,7 @@
     </table>
   </div>
   <% } /* endif */ %>
+
 <script>
 function nextUserPages() {
   var userPageStart = document.getElementById("userPageStart");
