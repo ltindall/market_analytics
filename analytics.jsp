@@ -36,6 +36,16 @@
             // category id for query, if all categories then it equals 0
             category = Integer.parseInt(request.getParameter("category"));
 
+            int userPageStart = 0;
+            if(request.getParameter("userPageStart") != null && !request.getParameter("userPageStart").isEmpty()) {
+              userPageStart = Integer.parseInt(request.getParameter("userPageStart"));
+            }
+
+            int prodPageStart = 0;
+            if(request.getParameter("prodPageStart") != null && !request.getParameter("prodPageStart").isEmpty()) {
+              prodPageStart = Integer.parseInt(request.getParameter("prodPageStart"));
+            }
+
             Statement stmt = conn.createStatement(
               ResultSet.TYPE_SCROLL_INSENSITIVE,
               ResultSet.TYPE_SCROLL_INSENSITIVE
@@ -79,14 +89,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY p3.name ASC " +
-                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.id, u3.name " +
                                "ORDER BY u3.name ASC " +
-                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.username ASC, k.prodname ASC ";
@@ -126,14 +136,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY totalProd DESC " +
-                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.id, u3.name " +
                                "ORDER BY totalUser DESC " +
-                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC ";
@@ -177,14 +187,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY p3.name ASC " +
-                    ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT MAX(u3.id) as id, u3.state, COALESCE(SUM(o.price * o.quantity),0) AS totalState " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.state " +
                                "ORDER BY u3.state ASC " +
-                    ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
                     ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                     "ORDER BY k.state ASC, k.prodname ASC ";
@@ -202,14 +212,14 @@
                   }
                   analyticsQuery += "GROUP BY p3.id, p3.name " +
                              "ORDER BY totalprod DESC " +
-                  ") p2 OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                  ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
                          "(SELECT * FROM ( " +
                              "SELECT MAX(u3.id) as id, u3.state, COALESCE(SUM(o.price * o.quantity),0) AS totalState " +
                              "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                              "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                              "GROUP BY u3.state " +
                              "ORDER BY totalstate DESC " +
-                  ") u2 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                  ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
                   ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                   "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                   "ORDER BY k.totalstate DESC, k.totalprod DESC ";
@@ -237,7 +247,7 @@
 </div>
 <div class="container">
     <div class="row">
-        <form  class="form-inline" action="analytics.jsp" method="POST">
+        <form  class="form-inline" action="analytics.jsp" method="POST" id="queryForm">
             <div class="form-group">
                 <label for="row">Row</label>
                 <select class="form-control" id="row" name="row">
@@ -292,6 +302,13 @@
                     %>
                 </select>
             </div>
+            <% if(request.getParameter("userPageStart") != null && !request.getParameter("userPageStart").isEmpty()) { %>
+            <input type="number" name="userPageStart" id="userPageStart" style="display: none" value="<%=request.getParameter("userPageStart") %>">
+            <input type="number" name="prodPageStart" id="prodPageStart" style="display: none" value="<%=request.getParameter("prodPageStart") %>">
+            <% } else { %>
+            <input type="number" name="userPageStart" id="userPageStart" style="display: none" value="0">
+            <input type="number" name="prodPageStart" id="prodPageStart" style="display: none" value="0">
+            <% } %>
             <input class="btn btn-primary" type="submit" name="query" value="Run Query"/>
         </form>
     </div>
@@ -316,6 +333,7 @@
         <% count++;
         } //end while
         rs.beforeFirst(); %>
+        <td><button class="btn btn-link" onclick="nextProdPages()">Next 10 products</button></td>
       </tr>
       <tr>
       <%
@@ -339,8 +357,21 @@
         <% } /* end ifelse */ %>
       <% } /* end while */ %>
       </tr>
+      <tr><td><button class="btn btn-link" onclick="nextUserPages()">Next 20 users</button></td></tr>
     </table>
   </div>
   <% } /* endif */ %>
+<script>
+function nextUserPages() {
+  var userPageStart = document.getElementById("userPageStart");
+  userPageStart.value = parseInt(userPageStart.value) + 20;
+  document.getElementById("queryForm").submit();
+}
+function nextProdPages() {
+  var prodPageStart = document.getElementById("prodPageStart");
+  prodPageStart.value = parseInt(prodPageStart.value) + 10;
+  document.getElementById("queryForm").submit();
+}
+</script>
 </body>
 </html>
