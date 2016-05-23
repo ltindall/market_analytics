@@ -17,17 +17,17 @@
     	String password = "P3anutNJ3lly";
 		conn = DriverManager.getConnection(url, admin, password);
 		
-		String uberQuery = "WITH pValues AS ( "+ 
+		String uberQuery = "WITH pValues AS ( "+
 				"SELECT SUM(quantity*price) AS spent, product_id, user_id FROM "+
-				" orders GROUP BY user_id, product_id ORDER BY user_id) "+
-				"SELECT (top.cosSim/(n1.norm*n2.norm)) AS result,prod1.name AS prodA,prod2.name AS prodB FROM "+
-				"(SELECT SUM(quantity*price) AS norm, product_id FROM orders GROUP BY product_id ORDER BY product_id) AS n1 "+
-				"JOIN (SELECT SUM(t1.spent * t2.spent) AS cosSim,t1.product_id AS p1,t2.product_id AS p2 FROM "+
-				"pValues AS t1 JOIN pValues AS t2 ON t1.user_id=t2.user_id AND t1.product_id < t2.product_id GROUP BY t1.product_id,t2.product_id) AS top "+
-				"ON n1.product_id=p1 JOIN (SELECT SUM(quantity*price) AS norm, product_id FROM orders GROUP BY product_id ORDER BY product_id) AS n2 "+
-				"ON n2.product_id=p2 JOIN products prod1 ON prod1.id=top.p1 JOIN "+
-				"products prod2 ON top.p2=prod2.id "+
-				"ORDER BY result DESC LIMIT 100;";
+				"orders GROUP BY user_id, product_id ORDER BY user_id), "+
+				"normValues AS (SELECT SUM(quantity*price) AS norm, product_id FROM orders "+
+				"GROUP BY product_id ORDER BY product_id) "+
+				"SELECT (top.cosSim/(n1.norm*n2.norm)) AS result,prod1.name AS prodA,prod2.name "+
+				"AS prodB FROM normValues AS n1 JOIN (SELECT SUM(t1.spent * t2.spent) AS "+
+				"cosSim,t1.product_id AS p1,t2.product_id AS p2 FROM pValues AS t1 JOIN pValues AS t2 "+
+				"ON t1.user_id=t2.user_id AND t1.product_id < t2.product_id GROUP BY t1.product_id,t2.product_id) "+
+				"AS top ON n1.product_id=p1 JOIN normValues AS n2 ON n2.product_id=p2 JOIN products prod1 ON "+
+				"prod1.id=top.p1 JOIN products prod2 ON top.p2=prod2.id ORDER BY result DESC LIMIT 100";
 		stmt = conn.createStatement();
 		long startTime = System.currentTimeMillis();
 		rs = stmt.executeQuery(uberQuery);
