@@ -25,6 +25,7 @@
         int userPageStart = 0; 
         int prodPageStart = 0;
         ResultSet rs = null;
+        boolean hideForm = false; 
 	if ("POST".equalsIgnoreCase(request.getMethod())) {
 		//String action = request.getParameter("submit");
 
@@ -44,6 +45,10 @@
 
             if(request.getParameter("prodPageStart") != null && !request.getParameter("prodPageStart").isEmpty()) {
               prodPageStart = Integer.parseInt(request.getParameter("prodPageStart"));
+            }
+            
+            if(userPageStart > 0 || prodPageStart > 0 ){
+                hideForm = true; 
             }
 
             Statement stmt = conn.createStatement(
@@ -334,6 +339,12 @@
   <% } /* endif */ %>
 
 <script>
+window.onload = function(){
+    if(<%= hideForm %> == true){
+        var queryForm = document.getElementById('queryForm'); 
+        queryForm.style.visibility = 'hidden'; 
+    }
+}
 function nextUserPages() {
   var userPageStart = document.getElementById("userPageStart");
   userPageStart.value = parseInt(userPageStart.value) + 20;
