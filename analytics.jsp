@@ -110,14 +110,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY p3.name ASC " +
-                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 11 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.id, u3.name " +
                                "ORDER BY u3.name ASC " +
-                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 21 ROWS ONLY) u " +
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.username ASC, k.prodname ASC ";
@@ -135,14 +135,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY totalProd DESC " +
-                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 11 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT u3.id, u3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalUser " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.id, u3.name " +
                                "ORDER BY totalUser DESC " +
-                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 21 ROWS ONLY) u " +
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC ";
@@ -162,14 +162,14 @@
                     }
                     analyticsQuery += "GROUP BY p3.id, p3.name " +
                                "ORDER BY p3.name ASC " +
-                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                    ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 11 ROWS ONLY) p, " +
                            "(SELECT * FROM ( " +
                                "SELECT MAX(u3.id) as id, u3.state, COALESCE(SUM(o.price * o.quantity),0) AS totalState " +
                                "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                                "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                                "GROUP BY u3.state " +
                                "ORDER BY u3.state ASC " +
-                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                    ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 21 ROWS ONLY) u " +
                     ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                     "ORDER BY k.state ASC, k.prodname ASC ";
@@ -187,14 +187,14 @@
                   }
                   analyticsQuery += "GROUP BY p3.id, p3.name " +
                              "ORDER BY totalprod DESC " +
-                  ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 10 ROWS ONLY) p, " +
+                  ") p2 OFFSET " + prodPageStart + " ROWS FETCH NEXT 11 ROWS ONLY) p, " +
                          "(SELECT * FROM ( " +
                              "SELECT MAX(u3.id) as id, u3.state, COALESCE(SUM(o.price * o.quantity),0) AS totalState " +
                              "FROM Users u3 LEFT JOIN Orders o ON u3.id = o.user_id " +
                              "WHERE o.is_cart = false OR o.is_cart IS NULL " +
                              "GROUP BY u3.state " +
                              "ORDER BY totalstate DESC " +
-                  ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 20 ROWS ONLY) u " +
+                  ") u2 OFFSET " + userPageStart + " ROWS FETCH NEXT 21 ROWS ONLY) u " +
                   ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                   "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                   "ORDER BY k.totalstate DESC, k.totalprod DESC ";
@@ -296,10 +296,15 @@
         <td></td>
         <% int count = 0;
         int firstId = -1;
+        boolean moreProducts = false; 
         while(rs.next()) {
           //get first id
           if(count == 0) {
             firstId = rs.getInt("userId");
+          }
+          if(count >= 10 && rs.getInt("userId") == firstId){
+              moreProducts = true; 
+              break; 
           }
           //only get 10 products or only get as many products as available if less than 10
           if(count >= 10 || rs.getInt("userId") != firstId) {
@@ -309,31 +314,57 @@
         <% count++;
         } //end while
         rs.beforeFirst(); %>
-        <td><button class="btn btn-link" onclick="nextProdPages()">Next 10 products</button></td>
+        <%
+            if(moreProducts){
+        %>
+                <td><button class="btn btn-link" onclick="nextProdPages()">Next 10 products</button></td>
+        <%
+            }
+        %>
       </tr>
       <tr>
       <%
       int currId = -1;
       int newId = -1;
+      int userCount = 1;
+      int prodCount = 0; 
       while(rs.next()) {
         newId = rs.getInt("userId");
         if(currId == -1) {
-          currId = newId; %>
+          currId = newId;
+          prodCount = 1;%>
           <td style="font-weight: bold"><%=rs.getString("username") %> (<%=rs.getDouble("totalUser") %>)</td>
           <td><%=rs.getDouble("spent") %></td>
         <% }
         else if(currId != newId) { //new user found, end old row make new one
-          currId = newId; %>
+          userCount += 1; 
+          if(userCount > 20){
+            break; 
+          }
+          currId = newId; 
+          prodCount = 1;%>
         </tr>
         <tr>
           <td style="font-weight: bold"><%=rs.getString("username") %> (<%=rs.getDouble("totalUser") %>)</td>
           <td><%=rs.getDouble("spent") %></td>
-        <% } else { /* just another column */ %>
+        <% } else { /* just another column */ 
+            if(prodCount >= 10){
+                continue; 
+            }
+        %>
           <td><%=rs.getDouble("spent") %></td>
-        <% } /* end ifelse */ %>
+        <% 
+            prodCount += 1; 
+            } /* end ifelse */ %>
       <% } /* end while */ %>
       </tr>
-      <tr><td><button class="btn btn-link" onclick="nextUserPages()">Next 20 users</button></td></tr>
+      <%
+        if(userCount > 20){
+      %>
+        <tr><td><button class="btn btn-link" onclick="nextUserPages()">Next 20 users</button></td></tr>
+      <%
+        }
+      %>
     </table>
   </div>
   <% } /* endif */ %>
