@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ page import="java.sql.*, javax.sql.*, javax.naming.*"%>
+<%@ page import="java.sql.*, javax.sql.*, javax.naming.*, java.text.DecimalFormat"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -11,7 +11,7 @@
 </head>
 
 <%
-        long startJsp =  System.currentTimeMillis(); 
+        long startJsp =  System.currentTimeMillis();
 	Connection conn = null;
 	try {
 		Class.forName("org.postgresql.Driver");
@@ -23,12 +23,12 @@
 	catch (Exception e) {}
 
         int category = 0;
-        int userPageStart = 0; 
+        int userPageStart = 0;
         int prodPageStart = 0;
         ResultSet rs = null;
-        boolean hideForm = false; 
-        long startTime = -1; 
-        long endTime = -1; 
+        boolean hideForm = false;
+        long startTime = -1;
+        long endTime = -1;
 	if ("POST".equalsIgnoreCase(request.getMethod())) {
 		//String action = request.getParameter("submit");
 
@@ -41,7 +41,7 @@
             // category id for query, if all categories then it equals 0
             category = Integer.parseInt(request.getParameter("category"));
 
-           
+
             if(request.getParameter("userPageStart") != null && !request.getParameter("userPageStart").isEmpty()) {
               userPageStart = Integer.parseInt(request.getParameter("userPageStart"));
             }
@@ -49,9 +49,9 @@
             if(request.getParameter("prodPageStart") != null && !request.getParameter("prodPageStart").isEmpty()) {
               prodPageStart = Integer.parseInt(request.getParameter("prodPageStart"));
             }
-            
+
             if(userPageStart > 0 || prodPageStart > 0 ){
-                hideForm = true; 
+                hideForm = true;
             }
 
             Statement stmt = conn.createStatement(
@@ -84,12 +84,12 @@
                 GROUP BY users.id,users.name,products.name, topSum, topProducts.topProductSum
                 ORDER BY topSum DESC, topProducts.topProductSum DESC, users.name, products.name
           	*/
-            
-            
-            
-            // I think some of the following would be useful indices 
-            // If I have time I'll start testing 
-            // Indices can be added/removed by running the following sql 
+
+
+
+            // I think some of the following would be useful indices
+            // If I have time I'll start testing
+            // Indices can be added/removed by running the following sql
             //CREATE INDEX students_first_name ON students(first_name)
             //DROP INDEX students_first_name
             //orders.is_cart
@@ -99,7 +99,7 @@
             //users.state
             //orders.user_id
             //orders.product_id
-            String analyticsQuery = "";  
+            String analyticsQuery = "";
             if(rowOption.equals("Customers")){
                 if(orderOption.equals("Alphabetical")){
                      analyticsQuery += "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
@@ -205,15 +205,16 @@
                 }
 
             }
-            startTime = System.currentTimeMillis(); 
+            startTime = System.currentTimeMillis();
             rs = stmt.executeQuery(analyticsQuery);
-            endTime = System.currentTimeMillis(); 
+            endTime = System.currentTimeMillis();
 	}
 
 
 
         Statement catStmt = conn.createStatement();
         ResultSet categories = catStmt.executeQuery("SELECT c.id,c.name FROM categories c");
+        DecimalFormat df = new DecimalFormat("#.00");
 %>
 <body>
 <div class="collapse navbar-collapse">
@@ -290,10 +291,10 @@
             <input type="number" name="prodPageStart" id="prodPageStart" style="display: none" value="0">
             <% } %>
             <input class="btn btn-primary" type="submit" name="query" value="Run Query"/>
-            
+
         </form>
     </div>
-</div> 
+</div>
   <% if ("POST".equalsIgnoreCase(request.getMethod())) { %>
   <div>
     <table class="table table-striped">
@@ -301,21 +302,21 @@
         <td></td>
         <% int count = 0;
         int firstId = -1;
-        boolean moreProducts = false; 
+        boolean moreProducts = false;
         while(rs.next()) {
           //get first id
           if(count == 0) {
             firstId = rs.getInt("userId");
           }
           if(count >= 10 && rs.getInt("userId") == firstId){
-              moreProducts = true; 
-              break; 
+              moreProducts = true;
+              break;
           }
           //only get 10 products or only get as many products as available if less than 10
           if(count >= 10 || rs.getInt("userId") != firstId) {
             break;
           } %>
-        <td style="font-weight: bold"><%= rs.getString("prodname") %> (<%= rs.getDouble("totalProd") %>)</td>
+        <td style="font-weight: bold"><%= rs.getString("prodname") %> (<%= df.format(rs.getDouble("totalProd")) %>)</td>
         <% count++;
         } //end while
         rs.beforeFirst(); %>
@@ -332,34 +333,34 @@
       int currId = -1;
       int newId = -1;
       int userCount = 1;
-      int prodCount = 0; 
+      int prodCount = 0;
       while(rs.next()) {
         newId = rs.getInt("userId");
         if(currId == -1) {
           currId = newId;
           prodCount = 1;%>
-          <td style="font-weight: bold"><%=rs.getString("username") %> (<%=rs.getDouble("totalUser") %>)</td>
-          <td><%=rs.getDouble("spent") %></td>
+          <td style="font-weight: bold"><%=rs.getString("username") %> (<%= df.format(rs.getDouble("totalUser")) %>)</td>
+          <td><%= df.format(rs.getDouble("spent")) %></td>
         <% }
         else if(currId != newId) { //new user found, end old row make new one
-          userCount += 1; 
+          userCount += 1;
           if(userCount > 20){
-            break; 
+            break;
           }
-          currId = newId; 
+          currId = newId;
           prodCount = 1;%>
         </tr>
         <tr>
-          <td style="font-weight: bold"><%=rs.getString("username") %> (<%=rs.getDouble("totalUser") %>)</td>
-          <td><%=rs.getDouble("spent") %></td>
-        <% } else { /* just another column */ 
+          <td style="font-weight: bold"><%=rs.getString("username") %> (<%= df.format(rs.getDouble("totalUser")) %>)</td>
+          <td><%= df.format(rs.getDouble("spent")) %></td>
+        <% } else { /* just another column */
             if(prodCount >= 10){
-                continue; 
+                continue;
             }
         %>
-          <td><%=rs.getDouble("spent") %></td>
-        <% 
-            prodCount += 1; 
+          <td><%= df.format(rs.getDouble("spent")) %></td>
+        <%
+            prodCount += 1;
             } /* end ifelse */ %>
       <% } /* end while */ %>
       </tr>
@@ -377,8 +378,8 @@
 <script>
 window.onload = function(){
     if(<%= hideForm %> == true){
-        var queryForm = document.getElementById('queryForm'); 
-        queryForm.style.visibility = 'hidden'; 
+        var queryForm = document.getElementById('queryForm');
+        queryForm.style.visibility = 'hidden';
     }
 }
 function nextUserPages() {
@@ -394,9 +395,9 @@ function nextProdPages() {
 </script>
 <%
 
-    long endJsp =  System.currentTimeMillis(); 
-    out.print("<p>Query time: "+((double)(endTime - startTime))/1000+" seconds</p>"); 
-    out.print("<p>JSP load time: "+((double)(endJsp - startJsp))/1000+" seconds</p>"); 
+    long endJsp =  System.currentTimeMillis();
+    out.print("<p>Query time: "+((double)(endTime - startTime))/1000+" seconds</p>");
+    out.print("<p>JSP load time: "+((double)(endJsp - startJsp))/1000+" seconds</p>");
 %>
 </body>
 </html>
