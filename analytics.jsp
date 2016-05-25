@@ -11,6 +11,7 @@
 </head>
 
 <%
+        long startJsp =  System.currentTimeMillis(); 
 	Connection conn = null;
 	try {
 		Class.forName("org.postgresql.Driver");
@@ -26,6 +27,8 @@
         int prodPageStart = 0;
         ResultSet rs = null;
         boolean hideForm = false; 
+        long startTime = -1; 
+        long endTime = -1; 
 	if ("POST".equalsIgnoreCase(request.getMethod())) {
 		//String action = request.getParameter("submit");
 
@@ -96,10 +99,10 @@
             //users.state
             //orders.user_id
             //orders.product_id
-             
+            String analyticsQuery = "";  
             if(rowOption.equals("Customers")){
                 if(orderOption.equals("Alphabetical")){
-                    String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                     analyticsQuery += "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
                     "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
                     "FROM (SELECT * FROM ( " +
                                "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
@@ -121,10 +124,10 @@
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.username ASC, k.prodname ASC ";
-                    rs = stmt.executeQuery(analyticsQuery);
+                    //rs = stmt.executeQuery(analyticsQuery);
                 }
                 else{
-                    String analyticsQuery = "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                     analyticsQuery += "SELECT k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
                     "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS userId, u.name AS username, u.totaluser " +
                     "FROM (SELECT * FROM ( " +
                                "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
@@ -146,12 +149,12 @@
                     ") k LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON k.userid = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.userid, k.username, k.totaluser, k.prodid, k.prodname, k.totalprod " +
                     "ORDER BY k.totaluser DESC, k.totalprod DESC,k.username ASC, k.prodname ASC ";
-                    rs = stmt.executeQuery(analyticsQuery);
+                    //rs = stmt.executeQuery(analyticsQuery);
                 }
             }
             else if(rowOption.equals("States")){
                 if(orderOption.equals("Alphabetical")){
-                    String analyticsQuery = "SELECT k.stateid AS userid, k.state AS username, k.totalState AS totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                    analyticsQuery += "SELECT k.stateid AS userid, k.state AS username, k.totalState AS totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
                     "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS stateid, u.state AS state, u.totalstate " +
                     "FROM (SELECT * FROM ( " +
                                "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
@@ -173,10 +176,10 @@
                     ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                     "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                     "ORDER BY k.state ASC, k.prodname ASC ";
-                    rs = stmt.executeQuery(analyticsQuery);
+                    //rs = stmt.executeQuery(analyticsQuery);
                 }
                 else{
-                  String analyticsQuery = "SELECT k.stateid AS userid, k.state AS username, k.totalState AS totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
+                   analyticsQuery += "SELECT k.stateid AS userid, k.state AS username, k.totalState AS totaluser, k.prodid, k.prodname, k.totalprod, COALESCE(SUM(o.price * o.quantity),0) AS spent " +
                   "FROM (SELECT p.id AS prodId, p.name AS prodName, p.totalprod, u.id AS stateid, u.state AS state, u.totalstate " +
                   "FROM (SELECT * FROM ( " +
                              "SELECT p3.id, p3.name, COALESCE(SUM(o.price * o.quantity),0) AS totalProd " +
@@ -198,11 +201,13 @@
                   ") k  JOIN Users u4 ON u4.state = k.state LEFT JOIN (SELECT * FROM Orders o2 WHERE o2.is_cart = false) o ON u4.id = o.user_id AND k.prodid = o.product_id " +
                   "GROUP BY k.state, k.totalState, k.prodid, k.prodname, k.totalprod, k.stateid " +
                   "ORDER BY k.totalstate DESC, k.totalprod DESC ";
-                  rs = stmt.executeQuery(analyticsQuery);
+                  //rs = stmt.executeQuery(analyticsQuery);
                 }
 
             }
-
+            startTime = System.currentTimeMillis(); 
+            rs = stmt.executeQuery(analyticsQuery);
+            endTime = System.currentTimeMillis(); 
 	}
 
 
@@ -387,5 +392,11 @@ function nextProdPages() {
   document.getElementById("queryForm").submit();
 }
 </script>
+<%
+
+    long endJsp =  System.currentTimeMillis(); 
+    out.print("<p>Query time: "+((double)(endTime - startTime))/1000+" seconds</p>"); 
+    out.print("<p>JSP load time: "+((double)(endJsp - startJsp))/1000+" seconds</p>"); 
+%>
 </body>
 </html>
